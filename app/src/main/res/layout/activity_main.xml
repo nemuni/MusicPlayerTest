@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/rvList"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_above="@id/play_layout_above"/>
+
+    <View
+        android:id="@+id/play_layout_above"
+        android:layout_width="match_parent"
+        android:layout_height="1sp"
+        android:layout_above="@id/relay_play"
+        android:background="@color/colorPrimary"/>
+    <RelativeLayout
+        android:id="@+id/relay_play"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_alignParentBottom="true"
+        android:paddingStart="25dp"
+        android:paddingEnd="10dp">
+
+        <LinearLayout
+            android:id="@+id/play_msg"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_toStartOf="@id/btn_skip_pre"
+            android:paddingTop="@dimen/dp_4"
+            android:orientation="vertical">
+            <TextView
+                android:id="@+id/tv_musicname"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical"
+                android:textSize="@dimen/sp_16"
+                android:textColor="@android:color/black"
+                android:lines="1"
+                android:ellipsize="end"/>
+            <TextView
+                android:id="@+id/tv_singer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/dp_4"
+                android:layout_gravity="center_vertical"
+                android:lines="1"
+                android:ellipsize="end" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btn_skip_pre"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_toStartOf="@id/btn_play_pause"
+            android:layout_marginEnd="@dimen/dp_10"
+            android:layout_centerVertical="true"
+            android:background="@drawable/ic_skip_previous_black_40dp"
+            android:visibility="gone"/>
+        <Button
+            android:id="@+id/btn_play_pause"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_toStartOf="@id/btn_skip_next"
+            android:layout_marginEnd="@dimen/dp_10"
+            android:layout_centerVertical="true"
+            android:background="@drawable/ic_play_circle_outline_black_32dp"
+            android:visibility="gone"/>
+        <Button
+            android:id="@+id/btn_skip_next"
+            android:layout_width="45dp"
+            android:layout_height="45dp"
+            android:layout_toStartOf="@id/btn_playlist"
+            android:layout_marginEnd="@dimen/dp_10"
+            android:layout_centerVertical="true"
+            android:background="@drawable/ic_skip_next_black_32dp"
+            android:visibility="gone"/>
+        <Button
+            android:id="@+id/btn_playlist"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="@drawable/ic_playlist_play_black_40dp"
+            android:visibility="gone"/>
+    </RelativeLayout>
+
+</RelativeLayout>

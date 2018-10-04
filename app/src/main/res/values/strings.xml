@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">MyMusicList</string>
+    <string name="title_activity_play_music">PlayMusicActivity</string>
+    <string name="action_settings">Settings</string>
+</resources>

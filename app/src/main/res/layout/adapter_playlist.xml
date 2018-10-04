@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/relay_playlist_item"
+    android:layout_width="match_parent"
+    android:layout_height="50dp"
+    android:paddingStart="@dimen/dp_10"
+    android:background="@drawable/ripple_play_circle">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_toStartOf="@id/iv_remove">
+        <ImageView
+            android:id="@+id/iv_playing"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginEnd="5dp"
+            android:layout_gravity="center_vertical"
+            android:src="@drawable/ic_playing_music_red_30dp"
+            android:visibility="gone"/>
+        <TextView
+            android:id="@+id/tv_musicname"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:textSize="16sp"
+            android:textColor="@android:color/black"
+            android:lines="1"
+            android:ellipsize="end"/>
+        <TextView
+            android:id="@+id/tv_musicsinger"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical"
+            android:textSize="12sp"
+            android:textColor="@android:color/black"
+            android:lines="1"
+            android:ellipsize="end"/>
+    </LinearLayout>
+
+    <!--<Button-->
+        <!--android:id="@+id/btn_remove"-->
+        <!--android:layout_width="30dp"-->
+        <!--android:layout_height="30dp"-->
+        <!--android:layout_centerVertical="true"-->
+        <!--android:layout_alignParentEnd="true"-->
+        <!--android:background="@drawable/ic_remove_black_30dp"/>-->
+
+    <ImageView
+        android:id="@+id/iv_remove"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:padding="10dp"
+        android:layout_centerVertical="true"
+        android:layout_alignParentEnd="true"
+        android:src="@drawable/ic_remove_black_30dp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1sp"
+        android:layout_alignParentBottom="true"
+        android:background="@color/colorPrimary"/>
+</RelativeLayout>
