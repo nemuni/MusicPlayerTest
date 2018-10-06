@@ -294,6 +294,7 @@ public class MediaPlayerService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
+        unregisterReceiver(receiver);
         if (mediaPlayer != null) {
             mediaPlayer.stop();
             mediaPlayer.release();

@@ -27,6 +27,7 @@ import android.view.animation.LayoutAnimationController;
 import android.widget.FrameLayout;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
+import com.chad.library.adapter.base.BaseViewHolder;
 import com.example.nemuni.mymusiclist.R;
 import com.example.nemuni.mymusiclist.entry.Data;
 import com.example.nemuni.mymusiclist.entry.MusicMsg;
@@ -117,6 +118,7 @@ public class PlayListFragment extends BottomSheetDialogFragment {
             adapter.notifyItemChanged(oldMusic);
         }
         adapter.notifyItemChanged(curMusic);
+//        adapter.notifyDataSetChanged();
 //        handler.sendEmptyMessageDelayed(0, 200);
     }
 
@@ -161,7 +163,7 @@ public class PlayListFragment extends BottomSheetDialogFragment {
     }
 
     private int getHeight() {
-        return (int)(getContext().getResources().getDisplayMetrics().heightPixels * 0.6);
+        return (int)(getContext().getResources().getDisplayMetrics().heightPixels * 0.5);
     }
 
     public void setCurMusic(int curMusic) {

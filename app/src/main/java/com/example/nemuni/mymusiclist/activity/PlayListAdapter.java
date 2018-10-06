@@ -45,7 +45,7 @@ public class PlayListAdapter extends BaseQuickAdapter<MusicMsg, BaseViewHolder> 
             helper.setTextColor(R.id.tv_musicname, Color.RED);
             helper.setTextColor(R.id.tv_musicsinger, Color.RED);
         }
-        Log.d("PlayListAdapter", "position: " + helper.getLayoutPosition());
+        Log.d("PlayListAdapter", "position: " + helper.getLayoutPosition() + helper.itemView.getBackground());
     }
 
     public void releaseContext() {
