@@ -1,15 +1,14 @@
-package com.example.nemuni.mymusiclist.activity;
+package com.example.nemuni.mymusiclist.fragment;
 
 import android.content.Context;
 import android.graphics.Color;
-import android.graphics.drawable.RippleDrawable;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
 import com.example.nemuni.mymusiclist.R;
-import com.example.nemuni.mymusiclist.entry.MusicMsg;
+import com.example.nemuni.mymusiclist.bean.MusicMsg;
 
 import java.util.List;
 

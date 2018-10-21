@@ -10,7 +10,7 @@ import android.util.Log;
 import android.util.LruCache;
 
 import com.example.nemuni.mymusiclist.entry.Data;
-import com.example.nemuni.mymusiclist.entry.MusicMsg;
+import com.example.nemuni.mymusiclist.bean.MusicMsg;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +40,7 @@ public class MusicUtil {
         return list;
     }
 
-    public static Bitmap getMusicCover(String name, String path, int px) {
+    public static Bitmap getFixMusicCover(String name, String path, int px) {
         LruCache<String, Bitmap> cache = Data.getBitmapCache();
         Bitmap bitmap;
         if ((bitmap = getSmallPic(cache, name)) != null) {
@@ -55,11 +55,29 @@ public class MusicUtil {
         byte[] picture = mediaMetadataRetriever.getEmbeddedPicture();
         if (picture != null) {
             bitmap = BitmapFactory.decodeByteArray(picture, 0, picture.length);
-            Log.d("MusicUtil", bitmap.getWidth() + " " + bitmap.getHeight());
+            Log.d("MusicUtil", "getFixMusicCover: " + bitmap.getWidth() + " " + bitmap.getHeight());
             putOriginPic(cache, name, bitmap);
             Bitmap result = DecodeBitmapUtil.zoomPic(bitmap, px, px);
             putSmallPic(cache, name, result);
             return result;
+        }
+        return null;
+    }
+
+    public static Bitmap getOriginMusicCover(String name, String path) {
+        LruCache<String, Bitmap> cache = Data.getBitmapCache();
+        Bitmap bitmap;
+        if ((bitmap = getOriginPic(cache, name)) != null) {
+            return bitmap;
+        }
+        MediaMetadataRetriever mediaMetadataRetriever = new MediaMetadataRetriever();
+        mediaMetadataRetriever.setDataSource(path);
+        byte[] picture = mediaMetadataRetriever.getEmbeddedPicture();
+        if (picture != null) {
+            bitmap = BitmapFactory.decodeByteArray(picture, 0, picture.length);
+            Log.d("MusicUtil", "getOriginMusicCover" + bitmap.getWidth() + " " + bitmap.getHeight());
+            putOriginPic(cache, name, bitmap);
+            return bitmap;
         }
         return null;
     }

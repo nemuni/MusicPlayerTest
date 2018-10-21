@@ -11,7 +11,7 @@
         android:scaleType="centerCrop"
         android:src="@drawable/ic_library_music_green_50dp"/>
     <LinearLayout
-        android:id="@+id/play_msg"
+        android:id="@+id/linelay_playmsg"
         android:layout_width="match_parent"
         android:layout_height="50dp"
         android:layout_centerVertical="true"

@@ -5,7 +5,7 @@ import android.support.annotation.Nullable;
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
 import com.example.nemuni.mymusiclist.R;
-import com.example.nemuni.mymusiclist.entry.MusicMsg;
+import com.example.nemuni.mymusiclist.bean.MusicMsg;
 
 import java.util.List;
 

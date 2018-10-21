@@ -1,4 +1,4 @@
-package com.example.nemuni.mymusiclist.entry;
+package com.example.nemuni.mymusiclist.bean;
 
 import java.text.DecimalFormat;
 

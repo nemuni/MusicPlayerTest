@@ -25,10 +25,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
-import com.example.nemuni.mymusiclist.activity.PlayListFragment;
+import com.example.nemuni.mymusiclist.fragment.PlayListFragment;
+import com.example.nemuni.mymusiclist.activity.PlayMusicActivity;
 import com.example.nemuni.mymusiclist.adapter.MusicListAdapter;
 import com.example.nemuni.mymusiclist.entry.Data;
-import com.example.nemuni.mymusiclist.entry.MusicMsg;
+import com.example.nemuni.mymusiclist.bean.MusicMsg;
 import com.example.nemuni.mymusiclist.receiver.MusicChangedReceiver;
 import com.example.nemuni.mymusiclist.service.MediaPlayerService;
 import com.example.nemuni.mymusiclist.util.MusicUtil;
@@ -76,16 +77,33 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
                 PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
+                    PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(this, new String[]{
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                        Manifest.permission.RECORD_AUDIO
+                }, 1010);
+            } else {
+                ActivityCompat.requestPermissions(this, new String[]{
+                        Manifest.permission.WRITE_EXTERNAL_STORAGE
+                }, 1010);
+            }
+        } else if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) !=
+                PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this, new String[]{
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
-            },1);
-        } else {
-            initView();
-            bindService();
-            initMusicList();
-            initListener();
-            registerReceiver();
+                    Manifest.permission.RECORD_AUDIO
+            }, 1010);
+        }else {
+            initActivity();
         }
+    }
+
+    private void initActivity() {
+        initView();
+        bindService();
+        initMusicList();
+        initListener();
+        registerReceiver();
     }
 
     private void initView() {
@@ -130,6 +148,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         btn_SkipPre.setOnClickListener(this);
         btn_SkipNext.setOnClickListener(this);
         btn_PlayList.setOnClickListener(this);
+        relay_Play.setOnClickListener(this);
     }
 
     private void bindService() {
@@ -159,13 +178,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             tv_MusicName.setText(playList.get(curMusic).getMusic());
                             tv_Singer.setText(playList.get(curMusic).getSinger());
                             if (playListFragment != null) {
-                                playListFragment.setCurMusic(curMusic);
+                                playListFragment.refreshCurMusic();
                             }
                             break;
                         case MusicChangedReceiver.Action_Changed_State:
                             isPause = intent.getIntExtra(MusicChangedReceiver.Intent_State,
                                     MusicChangedReceiver.Intent_State_Pause) == MusicChangedReceiver.Intent_State_Pause;
                             changeState();
+                            break;
                     }
                 }
             }
@@ -229,9 +249,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             case R.id.btn_playlist:
                 if (playListFragment == null) {
                     playListFragment = new PlayListFragment();
-                    playListFragment.setCurMusic(curMusic);
+//                    playListFragment.refreshCurMusic();
                 }
                 playListFragment.show(getSupportFragmentManager(), "bottomSheet");
+                break;
+            case R.id.relay_play:
+                Intent intent = new Intent(this, PlayMusicActivity.class);
+                startActivity(intent);
+                break;
             default :
         }
     }
@@ -239,13 +264,21 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         switch (requestCode)  {
-            case 1:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    initView();
-                    bindService();
-                    initMusicList();
-                    initListener();
-                    registerReceiver();
+            case 1010:
+                if (grantResults.length > 0) {
+                    boolean allGranted = true;
+                    for (int i = 0; i < grantResults.length; i++) {
+                        if (grantResults[i] != PackageManager.PERMISSION_GRANTED) {
+                            allGranted = false;
+                            break;
+                        }
+                    }
+                    if (allGranted) {
+                        initActivity();
+                    } else {
+                        Toast.makeText(this, "程序获取权限失败，无法运行", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
                 } else {
                     Toast.makeText(this, "程序获取权限失败，无法运行", Toast.LENGTH_SHORT).show();
                     finish();

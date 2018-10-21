@@ -3,6 +3,8 @@ package com.example.nemuni.mymusiclist.entry;
 import android.graphics.Bitmap;
 import android.util.LruCache;
 
+import com.example.nemuni.mymusiclist.bean.MusicMsg;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,6 +39,10 @@ public class Data {
     public static void setPlayMusicList(List<MusicMsg> musicList) {
         playMusicList.clear();
         playMusicList.addAll(musicList);
+    }
+
+    public static MusicMsg getPlayingMusicMsg() {
+        return playMusicList.get(curMusic);
     }
 
     public static LruCache<String, Bitmap> getBitmapCache() {

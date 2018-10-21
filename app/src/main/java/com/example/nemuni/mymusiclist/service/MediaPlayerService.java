@@ -21,7 +21,7 @@ import android.widget.RemoteViews;
 import com.example.nemuni.mymusiclist.MainActivity;
 import com.example.nemuni.mymusiclist.R;
 import com.example.nemuni.mymusiclist.entry.Data;
-import com.example.nemuni.mymusiclist.entry.MusicMsg;
+import com.example.nemuni.mymusiclist.bean.MusicMsg;
 import com.example.nemuni.mymusiclist.receiver.MusicChangedReceiver;
 import com.example.nemuni.mymusiclist.util.MusicUtil;
 
@@ -209,11 +209,11 @@ public class MediaPlayerService extends Service {
             views.setTextViewText(R.id.tv_playmusic, music.getMusic());
             views.setTextViewText(R.id.tv_playsinger, music.getSinger());
             int px = (int)(getResources().getDisplayMetrics().density * 60 + 0.5f);
-            Bitmap cover = MusicUtil.getMusicCover(music.getMusic(), music.getPath(), px);
-            log(cover.getWidth() + " " + cover.getHeight());
+            Bitmap cover = MusicUtil.getFixMusicCover(music.getMusic(), music.getPath(), px);
             if (cover == null) {
                 views.setImageViewResource(R.id.iv_playcover, R.drawable.ic_library_music_green_50dp);
             } else {
+                log(cover.getWidth() + " " + cover.getHeight());
                 views.setImageViewBitmap(R.id.iv_playcover, cover);
             }
             musicChenged = false;
@@ -282,6 +282,24 @@ public class MediaPlayerService extends Service {
         hasStartForeground = true;
     }
 
+    public boolean getIsPause() {
+        return isPause;
+    }
+
+    public int getDuration() {
+        int duration = mediaPlayer.getDuration();
+        return duration /= 1000;
+    }
+
+    public int getCurrentPosition() {
+        int curPosition = mediaPlayer.getCurrentPosition();
+        return curPosition /= 1000;
+    }
+
+    public void setcurPosition(int seconds) {
+        mediaPlayer.seekTo(seconds*1000);
+    }
+
     public void setMusics() {
         this.musics = Data.getPlayMusicList();
     }
@@ -289,6 +307,10 @@ public class MediaPlayerService extends Service {
     public void setCurMusic(int curMusic) {
         this.curMusic = curMusic;
         isStop = true;
+    }
+
+    public int getAudioSession() {
+        return mediaPlayer.getAudioSessionId();
     }
 
     @Override
