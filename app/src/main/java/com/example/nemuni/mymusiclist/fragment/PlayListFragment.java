@@ -4,9 +4,6 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
-import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.BottomSheetDialog;
@@ -18,9 +15,12 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.example.nemuni.mymusiclist.R;
+import com.example.nemuni.mymusiclist.config.Config;
 import com.example.nemuni.mymusiclist.entry.Data;
 import com.example.nemuni.mymusiclist.bean.MusicMsg;
 
@@ -34,18 +34,21 @@ import java.util.List;
  * @create 2018/9/29
  * @since 1.0.0
  */
-public class PlayListFragment extends BottomSheetDialogFragment {
+public class PlayListFragment extends BottomSheetDialogFragment implements View.OnClickListener {
 
+    private TextView btn_playMode;
+    private ImageView btn_removeAll;
     private RecyclerView rv_PlayList;
+    private LinearLayoutManager layoutManager;
 
-    private ChangeMusic listener;
+    private PlayListListener listener;
 
     private PlayListAdapter adapter;
     private List<MusicMsg> musics;
-    private int curMusic;
 
-    public interface ChangeMusic {
-        void changeMusic(int curMusic, boolean change);
+    public interface PlayListListener {
+        void changeMusic(int nextMusic);
+        void changePlayMode(int playMode, boolean display);
     }
 
     @Override
@@ -59,10 +62,12 @@ public class PlayListFragment extends BottomSheetDialogFragment {
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_playlist, container);
+        btn_playMode = view.findViewById(R.id.btn_playmode);
+        btn_playMode.setOnClickListener(this);
         RecyclerView recyclerView = view.findViewById(R.id.rv_playlist);
         ViewGroup.LayoutParams params = recyclerView.getLayoutParams();
         Log.d("PlayListFragment", "recycHeight: " + params.height);
-        params.height = getHeight();
+//        params.height = getHeight();
         Log.d("PlayListFragment", "recycHeight: " + params.height);
         recyclerView.setLayoutParams(params);
         musics = Data.getPlayMusicList();
@@ -72,59 +77,75 @@ public class PlayListFragment extends BottomSheetDialogFragment {
 
     private void initRvList(View view) {
         rv_PlayList = view.findViewById(R.id.rv_playlist);
-        rv_PlayList.setLayoutManager(new LinearLayoutManager(getContext()));
+        layoutManager = new LinearLayoutManager(getContext());
+        rv_PlayList.setLayoutManager(layoutManager);
         rv_PlayList.setItemAnimator(null);
         adapter = new PlayListAdapter(musics ,getContext());
-        adapter.curMusic = curMusic;
         adapter.setOnItemClickListener(new BaseQuickAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
-                if (position != curMusic) {
-                    changeMusic(curMusic, position, true);
-//                    view.postDelayed(new MyRunnable(position), 1000);
+                if (position != Data.getCurMusic()) {
+                    changeMusic(position);
                 }
             }
         });
         adapter.setOnItemChildClickListener(new BaseQuickAdapter.OnItemChildClickListener() {
             @Override
             public void onItemChildClick(BaseQuickAdapter adapter, View view, int position) {
-                adapter.remove(position);
-                if (position == curMusic) {
-                    if (curMusic >= musics.size()) {
-                        changeMusic(-1, musics.size()-1, true);
+                Data.removeMusicFromPlayList(position);
+                adapter.notifyItemRemoved(position);
+                if (position == PlayListFragment.this.adapter.curMusic) {
+                    if (position >= musics.size()) {
+                        changeMusic(musics.size()-1);
                     } else {
-                        changeMusic(-1, curMusic, true);
+                        changeMusic(position);
                     }
-                } else if (position < curMusic) {
-                    curMusic--;
-                    changeMusic(-1, curMusic, false);
+                } else if (position < PlayListFragment.this.adapter.curMusic) {
+                    PlayListFragment.this.adapter.curMusic--;
                 }
             }
         });
         rv_PlayList.setAdapter(adapter);
-//        adapter.bindToRecyclerView(rv_PlayList);
     }
 
-    private void changeMusic(int oldMusic, int curMusic, boolean change) {
-        this.curMusic = curMusic;
-        listener.changeMusic(curMusic, change);
-        adapter.curMusic = curMusic;
-        if (oldMusic != -1) {
-            adapter.notifyItemChanged(oldMusic);
+    private void changeMusic(int nextMusic) {
+        adapter.notifyItemChanged(adapter.curMusic);
+        adapter.curMusic = nextMusic;
+        adapter.notifyItemChanged(nextMusic);
+        listener.changeMusic(nextMusic);
+    }
+
+    private void changePlayMode(int playMode, boolean callListener) {
+        switch (playMode) {
+            case Config.PLAY_MODE_SINGLE:
+                btn_playMode.setCompoundDrawablesWithIntrinsicBounds(getResources().getDrawable(R.drawable.ic_playmode_single_gray_24dp, null),
+                        null, null, null);
+                btn_playMode.setText(Config.getPlayModeDesc(playMode));
+                break;
+            case Config.PLAY_MODE_RANDOM:
+                btn_playMode.setCompoundDrawablesWithIntrinsicBounds(getResources().getDrawable(R.drawable.ic_playmode_random_gray_24dp, null),
+                        null, null, null);
+                btn_playMode.setText(Config.getPlayModeDesc(playMode));
+                break;
+            default:
+                btn_playMode.setCompoundDrawablesWithIntrinsicBounds(getResources().getDrawable(R.drawable.ic_playmode_circulation_gray_24dp, null),
+                        null, null, null);
+                btn_playMode.setText(Config.getPlayModeDesc(playMode));
+                break;
         }
-        adapter.notifyItemChanged(curMusic);
-//        adapter.notifyDataSetChanged();
-//        handler.sendEmptyMessageDelayed(0, 200);
+        if (callListener) {
+            listener.changePlayMode(playMode, false);
+        }
     }
 
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
         Activity activity = getActivity();
-        if (activity instanceof ChangeMusic) {
-            listener = (ChangeMusic) activity;
+        if (activity instanceof PlayListListener) {
+            listener = (PlayListListener) activity;
         } else {
-            throw new IllegalArgumentException("activity must implements ChangeMusic");
+            throw new IllegalArgumentException("activity must implements PlayListListener");
         }
     }
 
@@ -133,6 +154,8 @@ public class PlayListFragment extends BottomSheetDialogFragment {
         super.onStart();
         BottomSheetDialog dialog = (BottomSheetDialog)getDialog();
         FrameLayout bottomSheet = dialog.getDelegate().findViewById(android.support.design.R.id.design_bottom_sheet);
+        ViewGroup.LayoutParams params = bottomSheet.getLayoutParams();
+        params.height = getHeight();
         bottomSheet.setBackground(getContext().getDrawable(R.drawable.dialogbackgroung_shape));
 //        dialog.getWindow().getAttributes().windowAnimations = R.style.MyBottomSheetAnimation;
 //        BottomSheetBehavior<FrameLayout> behavior = BottomSheetBehavior.from(bottomSheet);
@@ -147,9 +170,22 @@ public class PlayListFragment extends BottomSheetDialogFragment {
     @Override
     public void onResume() {
         super.onResume();
-        this.curMusic = Data.getCurMusic();
-        adapter.curMusic = this.curMusic;
+        adapter.curMusic = Data.getCurMusic();
         adapter.notifyDataSetChanged();
+        changePlayMode(Data.getPlayMode(), false);
+        rv_PlayList.post(new Runnable() {
+            @Override
+            public void run() {
+                log("findFirstVisible: " + layoutManager.findFirstCompletelyVisibleItemPosition());
+                log("findLastVisible: " + layoutManager.findLastCompletelyVisibleItemPosition());
+                int first = layoutManager.findFirstVisibleItemPosition();
+                int last = layoutManager.findLastVisibleItemPosition();
+                first = adapter.curMusic - ((last - first - 1) >> 1);
+                log("firstPosition: " + first);
+                if (first <= 0) return;
+                layoutManager.scrollToPositionWithOffset(first, 0);
+            }
+        });
     }
 
     @Override
@@ -159,15 +195,25 @@ public class PlayListFragment extends BottomSheetDialogFragment {
     }
 
     private int getHeight() {
-        return (int)(getContext().getResources().getDisplayMetrics().heightPixels * 0.5);
+        return (int)(getContext().getResources().getDisplayMetrics().heightPixels * 0.6);
     }
 
     public void refreshCurMusic() {
         int curMusic = Data.getCurMusic();
-        this.curMusic = curMusic;
         if (adapter != null && curMusic != adapter.curMusic) {
+            adapter.notifyItemChanged(adapter.curMusic);
             adapter.curMusic = curMusic;
-            adapter.notifyDataSetChanged();
+            adapter.notifyItemChanged(adapter.curMusic);
+        }
+    }
+
+    @Override
+    public void onClick(View v) {
+        switch (v.getId()) {
+            case R.id.btn_playmode:
+                int playMode = Data.changePlayMode();
+                changePlayMode(playMode, true);
+                break;
         }
     }
 
@@ -175,34 +221,4 @@ public class PlayListFragment extends BottomSheetDialogFragment {
         Log.d("PlayListFragment", msg);
     }
 
-    private void performClick(int curMusic) {
-        log("performclick");
-        for (int i = 0; i < 5; i++) {
-            log("position : " + i + rv_PlayList.findViewHolderForAdapterPosition(i).itemView.getBackground());
-        }
-    }
-
-    class MyRunnable implements Runnable {
-        private int index;
-
-        public MyRunnable(int index) {
-            this.index = index;
-        }
-
-        @Override
-        public void run() {
-            performClick(index);
-        }
-    }
-
-    private void notifyAdapter() {
-        adapter.notifyDataSetChanged();
-    }
-
-    Handler handler = new Handler(Looper.getMainLooper()) {
-        @Override
-        public void handleMessage(Message msg) {
-            notifyAdapter();
-        }
-    };
 }

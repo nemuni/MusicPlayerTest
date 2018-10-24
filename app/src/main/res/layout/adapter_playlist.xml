@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="50dp"
     android:paddingStart="@dimen/dp_10"
+    android:paddingEnd="0dp"
     android:background="@drawable/ripple_play_circle">
 
     <LinearLayout
@@ -34,7 +35,6 @@
             android:layout_height="match_parent"
             android:gravity="center_vertical"
             android:textSize="12sp"
-            android:textColor="@android:color/black"
             android:lines="1"
             android:ellipsize="end"/>
     </LinearLayout>
@@ -45,7 +45,7 @@
         <!--android:layout_height="30dp"-->
         <!--android:layout_centerVertical="true"-->
         <!--android:layout_alignParentEnd="true"-->
-        <!--android:background="@drawable/ic_remove_black_30dp"/>-->
+        <!--android:background="@drawable/ic_remove_gray_30dp"/>-->
 
     <ImageView
         android:id="@+id/iv_remove"
@@ -54,11 +54,11 @@
         android:padding="10dp"
         android:layout_centerVertical="true"
         android:layout_alignParentEnd="true"
-        android:src="@drawable/ic_remove_black_30dp" />
+        android:src="@drawable/ic_remove_gray_30dp" />
 
     <View
         android:layout_width="match_parent"
-        android:layout_height="1sp"
+        android:layout_height="1px"
         android:layout_alignParentBottom="true"
         android:background="@color/colorPrimary"/>
 </RelativeLayout>

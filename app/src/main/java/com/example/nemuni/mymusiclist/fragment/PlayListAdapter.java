@@ -36,7 +36,7 @@ public class PlayListAdapter extends BaseQuickAdapter<MusicMsg, BaseViewHolder> 
                 .setText(R.id.tv_musicname, item.getMusic())
                 .setTextColor(R.id.tv_musicname, Color.BLACK)
                 .setText(R.id.tv_musicsinger, " - " + item.getSinger())
-                .setTextColor(R.id.tv_musicsinger, Color.BLACK)
+                .setTextColor(R.id.tv_musicsinger, Color.parseColor("#8A000000"))
                 .addOnClickListener(R.id.iv_remove);
 
         if (helper.getLayoutPosition() == curMusic) {

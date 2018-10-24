@@ -7,7 +7,9 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -31,13 +33,12 @@ import com.example.nemuni.mymusiclist.adapter.MusicListAdapter;
 import com.example.nemuni.mymusiclist.entry.Data;
 import com.example.nemuni.mymusiclist.bean.MusicMsg;
 import com.example.nemuni.mymusiclist.receiver.MusicChangedReceiver;
-import com.example.nemuni.mymusiclist.service.MediaPlayerService;
-import com.example.nemuni.mymusiclist.util.MusicUtil;
+import com.example.nemuni.mymusiclist.service.PlayBackgroundService;
 
 import java.util.List;
 
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener,PlayListFragment.ChangeMusic {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener,PlayListFragment.PlayListListener {
 
     private RecyclerView rvList;
     private RelativeLayout relay_Play;
@@ -49,21 +50,22 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView tv_Singer;
 
     private List<MusicMsg> musics;
-    private int curMusic = 0;
     private MusicListAdapter adapter;
-    private MediaPlayerService mediaPlayerService;
+    private Handler mServiceHandler;
     private boolean isBindService = false;
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            MediaPlayerService.MediaPlayerBinder binder = (MediaPlayerService.MediaPlayerBinder) service;
-            mediaPlayerService = (MediaPlayerService) binder.getService();
+            log("onServiceConnected");
+            PlayBackgroundService.PlayBackgroundServiceBinder binder =
+                    (PlayBackgroundService.PlayBackgroundServiceBinder) service;
+            mServiceHandler = binder.getHandler();
             isBindService = true;
         }
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-            mediaPlayerService = null;
+
         }
     };
     private MusicChangedReceiver musicChangedReceiver;
@@ -120,8 +122,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void initMusicList() {
-        musics = MusicUtil.getMusicData(this);
-        Data.setLocalMusicMsgList(musics);
+        musics = Data.getLocalMusicMsgList(this);
         adapter = new MusicListAdapter(musics);
         adapter.openLoadAnimation(BaseQuickAdapter.SLIDEIN_BOTTOM);
         rvList.setAdapter(adapter);
@@ -131,16 +132,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         adapter.setOnItemClickListener(new BaseQuickAdapter.OnItemClickListener() {
             @Override
             public void onItemClick(BaseQuickAdapter adapter, View view, int position) {
-                curMusic = position;
                 Data.setPlayMusicList(musics);
-                mediaPlayerService.setMusics();
-                mediaPlayerService.setCurMusic(curMusic);
-                mediaPlayerService.play();
-                if (btn_SkipPre.getVisibility() == View.GONE) {
-                    btn_PlayList.setVisibility(View.VISIBLE);
-                    btn_SkipNext.setVisibility(View.VISIBLE);
-                    btn_PlayPause.setVisibility(View.VISIBLE);
-                    btn_SkipPre.setVisibility(View.VISIBLE);
+                Message msg = Message.obtain(mServiceHandler, PlayBackgroundService.SERIVCEMSG_CHANGEMUSIC);
+                msg.arg1 = position;
+                msg.sendToTarget();
+//                if (btn_SkipPre.getVisibility() == View.GONE) {
+//                    btn_PlayList.setVisibility(View.VISIBLE);
+//                    btn_SkipNext.setVisibility(View.VISIBLE);
+//                    btn_PlayPause.setVisibility(View.VISIBLE);
+//                    btn_SkipPre.setVisibility(View.VISIBLE);
+//                }
+                if (relay_Play.getVisibility() == View.GONE) {
+                    relay_Play.setVisibility(View.VISIBLE);
                 }
             }
         });
@@ -154,7 +157,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void bindService() {
         if (!isBindService) {
             Log.d("MainActivity", "bindService");
-            Intent intent = new Intent(this, MediaPlayerService.class);
+            Intent intent = new Intent(this, PlayBackgroundService.class);
             bindService(intent, serviceConnection, BIND_AUTO_CREATE);
         }
     }
@@ -171,12 +174,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 if (action != null) {
                     switch (action) {
                         case MusicChangedReceiver.Action_Changed_Music:
-//                            tv_MusicName.setText(intent.getStringExtra(MusicChangedReceiver.Intent_Music_Music));
-//                            tv_Singer.setText(intent.getStringExtra(MusicChangedReceiver.Intent_Music_Singer));
-                            curMusic = intent.getIntExtra(MusicChangedReceiver.Intent_Music_CurMusic, 0);
-                            List<MusicMsg> playList = Data.getPlayMusicList();
-                            tv_MusicName.setText(playList.get(curMusic).getMusic());
-                            tv_Singer.setText(playList.get(curMusic).getSinger());
+                            MusicMsg music = Data.getPlayingMusicMsg();
+                            tv_MusicName.setText(music.getMusic());
+                            tv_Singer.setText(music.getSinger());
                             if (playListFragment != null) {
                                 playListFragment.refreshCurMusic();
                             }
@@ -195,16 +195,18 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     /**
      *
-     * @param curMusic
-     * @param change    是否切歌
+     * @param nextMusic
      */
     @Override
-    public void changeMusic(int curMusic, boolean change) {
-        this.curMusic = curMusic;
-        mediaPlayerService.setCurMusic(curMusic);
-        if (change) {
-            mediaPlayerService.play();
-        }
+    public void changeMusic(int nextMusic) {
+        Message msg = Message.obtain(mServiceHandler, PlayBackgroundService.SERIVCEMSG_CHANGEMUSIC);
+        msg.arg1 = nextMusic;
+        msg.sendToTarget();
+    }
+
+    @Override
+    public void changePlayMode(int playMode, boolean display) {
+
     }
 
     private void changeState() {
@@ -238,13 +240,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View v) {
         switch (v.getId()) {
             case R.id.btn_play_pause:
-                mediaPlayerService.pauseOrPlay();
+                Message msg1 = Message.obtain(mServiceHandler, PlayBackgroundService.SERVICEMSG_PLAYORPAUSE);
+                msg1.sendToTarget();
                 break;
             case R.id.btn_skip_pre:
-                mediaPlayerService.skipPre();
+                Message msg2 = Message.obtain(mServiceHandler, PlayBackgroundService.SERVICEMSG_SKIPPRE);
+                msg2.sendToTarget();
                 break;
             case R.id.btn_skip_next:
-                mediaPlayerService.skipNext();
+                Message msg3 = Message.obtain(mServiceHandler, PlayBackgroundService.SERVICEMSG_SKIPNEXT);
+                msg3.sendToTarget();
                 break;
             case R.id.btn_playlist:
                 if (playListFragment == null) {
@@ -291,11 +296,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     protected void onStop() {
         super.onStop();
-//        if (mediaPlayer != null) {
-//            mediaPlayer.stop();
-//            mediaPlayer.release();
-//            mediaPlayer = null;
-//        }
     }
 
     @Override
@@ -303,5 +303,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onDestroy();
         unbindService(serviceConnection);
         localBroadcastManager.unregisterReceiver(musicChangedReceiver);
+    }
+
+    private void log(String msg) {
+        Log.d("MainActivity", msg);
     }
 }

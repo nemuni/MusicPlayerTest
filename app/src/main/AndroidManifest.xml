@@ -28,6 +28,9 @@
             android:name=".service.MediaPlayerService"
             android:enabled="true"
             android:exported="true" />
+        <service android:name=".service.PlayBackgroundService"
+            android:enabled="true"
+            android:exported="true"/>
 
         <activity android:name=".activity.PlayMusicActivity"
             android:theme="@style/MyPlayMusicActivityTheme"/>

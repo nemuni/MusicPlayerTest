@@ -21,8 +21,10 @@ import android.view.animation.LinearInterpolator;
 import android.widget.Button;
 import android.widget.SeekBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.nemuni.mymusiclist.R;
+import com.example.nemuni.mymusiclist.config.Config;
 import com.example.nemuni.mymusiclist.entry.Data;
 import com.example.nemuni.mymusiclist.bean.MusicMsg;
 import com.example.nemuni.mymusiclist.fragment.PlayListFragment;
@@ -30,14 +32,14 @@ import com.example.nemuni.mymusiclist.myviews.MyImageView;
 import com.example.nemuni.mymusiclist.myviews.MyRelativeLayout;
 import com.example.nemuni.mymusiclist.myviews.RotateCircleBitmapView;
 import com.example.nemuni.mymusiclist.receiver.MusicChangedReceiver;
-import com.example.nemuni.mymusiclist.service.MediaPlayerService;
+import com.example.nemuni.mymusiclist.service.PlayBackgroundService;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class PlayMusicActivity extends AppCompatActivity implements View.OnClickListener,
-        SeekBar.OnSeekBarChangeListener, PlayListFragment.ChangeMusic {
+        SeekBar.OnSeekBarChangeListener, PlayListFragment.PlayListListener {
 
     private Toolbar toolbar;
     private Button btn_tbBack;
@@ -49,21 +51,23 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
     private SeekBar seekBar;
     private TextView tv_duration;
     private TextView tv_curProgress;
+    private Button btn_playMode;
     private Button btn_skipPre;
     private Button btn_playPause;
     private Button btn_skipNext;
     private Button btn_playList;
 
     ValueAnimator animator;
-    private MediaPlayerService mediaPlayerService;
+    private PlayBackgroundService.PlayBackgroundServiceBinder mBinder;
+    private Handler mServiceHandler;
     private boolean isBindService = false;
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
-            MediaPlayerService.MediaPlayerBinder binder = (MediaPlayerService.MediaPlayerBinder) service;
-            mediaPlayerService = (MediaPlayerService) binder.getService();
+            mBinder = (PlayBackgroundService.PlayBackgroundServiceBinder) service;
+            mServiceHandler = mBinder.getHandler();
             isBindService = true;
-            isPause = mediaPlayerService.getIsPause();
+            isPause = mBinder.isPause();
             changeState();
             setSeekBarDuration();
             updateSeekBarRunnable = new UpdateSeekbarRunnable(PlayMusicActivity.this);
@@ -72,7 +76,7 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
 
         @Override
         public void onServiceDisconnected(ComponentName name) {
-            mediaPlayerService = null;
+
         }
     };
     private MusicChangedReceiver musicChangedReceiver;
@@ -91,13 +95,6 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_play_music);
-//            View decorView = getWindow().getDecorView();
-//            int option = View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION	//表示会让应用的主体内容占用系统导航栏的空间
-//                    | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-//                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE;		//两行必须结合在一起，表示会让应用的主体内容占用系统状态栏的空间
-//            decorView.setSystemUiVisibility(option);
-//            getWindow().setNavigationBarColor(Color.TRANSPARENT);	//设置透明色
-//            getWindow().setStatusBarColor(Color.TRANSPARENT);
         initView();
         setListener();
         initAnimator();
@@ -122,6 +119,7 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
         seekBar = findViewById(R.id.seekbar);
         tv_curProgress = findViewById(R.id.tv_curprogress);
         tv_duration = findViewById(R.id.tv_duration);
+        btn_playMode = findViewById(R.id.btn_playmode);
         btn_skipPre = findViewById(R.id.btn_skip_pre);
         btn_playPause = findViewById(R.id.btn_play_pause);
         btn_skipNext = findViewById(R.id.btn_skip_next);
@@ -131,6 +129,7 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
     private void setListener() {
         btn_tbBack.setOnClickListener(this);
         seekBar.setOnSeekBarChangeListener(this);
+        btn_playMode.setOnClickListener(this);
         btn_skipPre.setOnClickListener(this);
         btn_playPause.setOnClickListener(this);
         btn_skipNext.setOnClickListener(this);
@@ -140,7 +139,7 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
     private void bindService() {
         if (!isBindService) {
             Log.d("MainActivity", "bindService");
-            Intent intent = new Intent(this, MediaPlayerService.class);
+            Intent intent = new Intent(this, PlayBackgroundService.class);
             bindService(intent, serviceConnection, BIND_AUTO_CREATE);
         }
     }
@@ -168,6 +167,7 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
                             isPause = intent.getIntExtra(MusicChangedReceiver.Intent_State,
                                     MusicChangedReceiver.Intent_State_Pause) == MusicChangedReceiver.Intent_State_Pause;
                             changeState();
+                            updateSeekBarProgress();
                             break;
                     }
                 }
@@ -196,17 +196,16 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
     }
 
     private void setSeekBarDuration() {
-        duration = mediaPlayerService.getDuration();
+        duration = mBinder.getDuration();
         seekBar.setMax(duration);
         seekBar.setSecondaryProgress(duration);
         tv_duration.setText(String.format(getResources().getString(R.string.tv_duration), duration/60, duration%60));
     }
 
     private void updateSeekBarProgress() {
-        if (!isPause && !isSeeking) {
-            curProgress = mediaPlayerService.getCurrentPosition();
+        if (!isSeeking && !isPause) {
+            curProgress = mBinder.getCurrentPosition();
             seekBar.setProgress(curProgress);
-//            tv_curProgress.setText(String.format(getResources().getString(R.string.tv_curminutes), curProgress / 60, curProgress % 60));
         }
     }
 
@@ -219,7 +218,6 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
             animator.resume();
         }
     }
-
 
     @Override
     protected void onDestroy() {
@@ -247,7 +245,6 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
                     if (mWeakReference != null) {
                         if (!mWeakReference.get().isPause) {
                             mWeakReference.get().mHandler.sendEmptyMessage(MSG_UPDATESEEKBAR);
-//                            mWeakReference.get().log("sendUpdateSeekbarMessage");
                         }
                         Thread.sleep(500);
                     } else {
@@ -288,14 +285,21 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
     @Override
     public void onClick(View v) {
         switch (v.getId()) {
+            case R.id.btn_playmode:
+                int playmode = Data.changePlayMode();
+                changePlayMode(playmode, true);
+                break;
             case R.id.btn_play_pause:
-                mediaPlayerService.pauseOrPlay();
+                Message msg1 = Message.obtain(mServiceHandler, PlayBackgroundService.SERVICEMSG_PLAYORPAUSE);
+                msg1.sendToTarget();
                 break;
             case R.id.btn_skip_pre:
-                mediaPlayerService.skipPre();
+                Message msg2 = Message.obtain(mServiceHandler, PlayBackgroundService.SERVICEMSG_SKIPPRE);
+                msg2.sendToTarget();
                 break;
             case R.id.btn_skip_next:
-                mediaPlayerService.skipNext();
+                Message msg3 = Message.obtain(mServiceHandler, PlayBackgroundService.SERVICEMSG_SKIPNEXT);
+                msg3.sendToTarget();
                 break;
             case R.id.btn_playlist:
                 if (playListFragment == null) {
@@ -310,10 +314,32 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
     }
 
     @Override
-    public void changeMusic(int curMusic, boolean change) {
-        mediaPlayerService.setCurMusic(curMusic);
-        if (change) {
-            mediaPlayerService.play();
+    public void changeMusic(int nextMusic) {
+        Message msg = Message.obtain(mServiceHandler, PlayBackgroundService.SERIVCEMSG_CHANGEMUSIC);
+        msg.arg1 = nextMusic;
+        msg.sendToTarget();
+    }
+
+    private Toast playModeToast;
+    @Override
+    public void changePlayMode(int playMode, boolean display) {
+        switch (playMode) {
+            case Config.PLAY_MODE_SINGLE:
+                btn_playMode.setBackgroundResource(R.drawable.selector_playmode_single);
+                break;
+            case Config.PLAY_MODE_RANDOM:
+                btn_playMode.setBackgroundResource(R.drawable.selector_playmode_random);
+                break;
+            default:
+                btn_playMode.setBackgroundResource(R.drawable.selector_playmode_circulation);
+                break;
+        }
+        if (display) {
+            if (playModeToast != null) {
+                playModeToast.cancel();
+            }
+            playModeToast = Toast.makeText(this, Config.getPlayModeDesc(playMode), Toast.LENGTH_SHORT);
+            playModeToast.show();
         }
     }
 
@@ -331,7 +357,9 @@ public class PlayMusicActivity extends AppCompatActivity implements View.OnClick
 
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
-        mediaPlayerService.setcurPosition(seekBar.getProgress());
+        Message msg = Message.obtain(mServiceHandler, PlayBackgroundService.SERVICEMSG_SETPOSITION);
+        msg.arg1 = seekBar.getProgress();
+        msg.sendToTarget();
         isSeeking = false;
     }
 

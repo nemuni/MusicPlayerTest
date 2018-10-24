@@ -1,6 +1,7 @@
 package com.example.nemuni.mymusiclist;
 
 import android.app.Application;
+import android.content.Context;
 
 import com.squareup.leakcanary.LeakCanary;
 
@@ -24,4 +25,5 @@ public class MyApplication extends Application {
         }
         LeakCanary.install(this);
     }
+
 }
