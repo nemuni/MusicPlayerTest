@@ -37,7 +37,12 @@ public class MusicUtil {
             }
             cursor.close();
         }
-        return list;
+        List<MusicMsg> newList = new ArrayList<>(list.size());
+        for (int i = list.size()-1; i >= 0; i--) {
+            newList.add(list.get(i));
+        }
+        list.clear();
+        return newList;
     }
 
     public static Bitmap getFixMusicCover(String name, String path, int px) {
